@@ -1,5 +1,3 @@
 Flask
-torch
-transformers
-sentencepiece
+requests
 gunicorn
