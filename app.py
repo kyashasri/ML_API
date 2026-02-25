@@ -5,24 +5,23 @@ import re
 
 app = Flask(__name__)
 
-# Load model once at startup
-model_path = "./hate_model"
+# Load model from Hugging Face
+MODEL_NAME = "Yashasri-04/hate-detection"
 
-tokenizer = AutoTokenizer.from_pretrained(model_path)
-model = AutoModelForSequenceClassification.from_pretrained(model_path)
+tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+model = AutoModelForSequenceClassification.from_pretrained(MODEL_NAME)
 model.eval()
 
 
-# 🔹 NEW: Text Cleaning Function
+# Text cleaning function
 def clean_text(text):
-    text = text.lower()  # convert to lowercase
-    text = re.sub(r'[^\w\s]', '', text)  # remove punctuation
-    text = re.sub(r'\s+', ' ', text).strip()  # remove extra spaces
+    text = text.lower()
+    text = re.sub(r'[^\w\s]', '', text)
+    text = re.sub(r'\s+', ' ', text).strip()
     return text
 
 
 def predict_message(text):
-    # 🔹 Clean text before prediction
     text = clean_text(text)
 
     inputs = tokenizer(
@@ -36,8 +35,7 @@ def predict_message(text):
     with torch.no_grad():
         outputs = model(**inputs)
 
-    logits = outputs.logits
-    prediction = torch.argmax(logits, dim=1).item()
+    prediction = torch.argmax(outputs.logits, dim=1).item()
 
     return "abusive" if prediction == 1 else "non-abusive"
 
@@ -45,7 +43,7 @@ def predict_message(text):
 @app.route("/predict", methods=["POST"])
 def predict():
     data = request.json
-    message = data.get("message")
+    message = data.get("message", "")
 
     result = predict_message(message)
 
